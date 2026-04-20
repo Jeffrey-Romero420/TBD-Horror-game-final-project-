@@ -347,6 +347,7 @@ GameObject:
   - component: {fileID: 147813357}
   - component: {fileID: 147813358}
   - component: {fileID: 147813359}
+  - component: {fileID: 147813360}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -491,9 +492,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   rb: {fileID: 147813357}
-  moveSpeed: 5
   walkSpeed: 5
-  runSpeed: 10
+  sprintSpeed: 10
   data: {fileID: 0}
 --- !u!114 &147813359
 MonoBehaviour:
@@ -511,7 +511,23 @@ MonoBehaviour:
   currentStamina: 0
   drainRate: 20
   regenRate: 15
+  regenDelay: 2
   staminaSlider: {fileID: 1113269473}
+  isSprinting: 0
+--- !u!114 &147813360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 147813351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21a5650136bfa3b418b8a3e90483d2b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LookAround
+  sensitivity: 180
+  cameraTransform: {fileID: 330585546}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -804,7 +820,7 @@ Transform:
   m_GameObject: {fileID: 434768324}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0.4790001}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.427}
   m_LocalScale: {x: 0.60416, y: 0.20716786, z: 0.22541372}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1233,7 +1249,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1321695365
 MonoBehaviour:
   m_ObjectHideFlags: 0

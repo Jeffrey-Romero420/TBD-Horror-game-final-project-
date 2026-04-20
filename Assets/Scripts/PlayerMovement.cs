@@ -24,6 +24,16 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+
+
+
+
+        Vector3 movementInput = transform.right * Input.GetAxisRaw("Horizontal") + transform.forward * Input.GetAxisRaw("Vertical");
+       movementInput = Vector3.Normalize(movementInput);
+        rb.MovePosition(transform.position + movementInput * Time.deltaTime * currentSpeed);
+
+
+        //Google AI
         if (Input.GetKey(KeyCode.LeftShift) && playerStamina.currentStamina > 0) 
         {
             currentSpeed = sprintSpeed;

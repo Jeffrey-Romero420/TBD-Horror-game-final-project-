@@ -8,6 +8,8 @@ public class PlayerStamina : MonoBehaviour
     public float currentStamina;
     public float drainRate = 20f;
     public float regenRate = 15f;
+    public float regenDelay = 2f;
+    private float lastUseTime;
     public Slider staminaSlider;
 
     public bool isSprinting;
@@ -23,22 +25,26 @@ public class PlayerStamina : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift) && currentStamina > 0) 
+
+        Vector3 movementInput = transform.right * Input.GetAxisRaw("Horizontal") + transform.forward * Input.GetAxisRaw("Vertical");
+
+        if (Input.GetKey(KeyCode.LeftShift) && currentStamina > 0 && movementInput.magnitude > 0) 
         {
             isSprinting = true;
+            currentStamina -= drainRate * Time.deltaTime;
+            lastUseTime = Time.time;
         }
         else
         {
             isSprinting = false;
         }
 
-        if (isSprinting)
+        if (!isSprinting && currentStamina < maxStamina)
         {
-            currentStamina -= drainRate * Time.deltaTime;
-        }
-        else if (currentStamina < maxStamina)
-        {
-            currentStamina += regenRate * Time.deltaTime;
+            if (Time.time > lastUseTime + regenDelay)
+            {
+                currentStamina += regenRate * Time.deltaTime;
+            }
         }
 
 
