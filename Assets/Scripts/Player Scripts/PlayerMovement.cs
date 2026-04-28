@@ -7,7 +7,7 @@ public class PlayerMovement : MonoBehaviour
     public float walkSpeed = 5f;
     public float sprintSpeed = 10f;
     public PlayerStamina data;
-    
+     
     private PlayerStamina playerStamina;
 
 
