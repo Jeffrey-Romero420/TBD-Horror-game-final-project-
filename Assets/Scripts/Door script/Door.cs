@@ -6,29 +6,30 @@ public class Door : MonoBehaviour
     public float openAngle = 90f;
     public float speed = 3f;
 
-    private Quaternion closedRotation;
-    private Quaternion openRotation;
+    private Quaternion closedRot;
+    private Quaternion openRot;
 
     void Start()
     {
-        closedRotation = transform.rotation;
-        openRotation = Quaternion.Euler(transform.eulerAngles + new Vector3(0, openAngle, 0));
+        closedRot = transform.rotation;
+        openRot = Quaternion.Euler(transform.eulerAngles + new Vector3(0, openAngle, 0));
     }
 
     void Update()
     {
-        if (isOpen)
-        {
-            transform.rotation = Quaternion.Slerp(transform.rotation, openRotation, Time.deltaTime * speed);
-        }
-        else
-        {
-            transform.rotation = Quaternion.Slerp(transform.rotation, closedRotation, Time.deltaTime * speed);
-        }
+        Quaternion target = isOpen ? openRot : closedRot;
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * speed);
     }
 
+    // ✅ PLAYER uses this
     public void ToggleDoor()
     {
         isOpen = !isOpen;
+    }
+
+    // ✅ KILLER uses this
+    public void OpenDoor()
+    {
+        isOpen = true;
     }
 }
