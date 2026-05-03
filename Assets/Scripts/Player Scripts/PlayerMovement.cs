@@ -3,56 +3,43 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public Rigidbody rb;
-    private float currentSpeed;
     public float walkSpeed = 5f;
-    public float sprintSpeed = 10f;
-    public PlayerStamina data;
-     
+    public float sprintSpeed = 8f;
+    public float crouchSpeed = 2.5f;
+
     private PlayerStamina playerStamina;
+    private CrouchScript crouchScript;
 
-
+    private Vector3 moveDirection;
+    private float currentSpeed;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-
         playerStamina = GetComponent<PlayerStamina>();
+        crouchScript = GetComponent<CrouchScript>();
     }
-
-
-
 
     void Update()
     {
+        // ✅ Read input in Update (responsive), apply movement in FixedUpdate (consistent physics)
+        bool isCrouching = crouchScript != null && crouchScript.isCrouching;
 
+        Vector3 movementInput = transform.right * Input.GetAxisRaw("Horizontal")
+                              + transform.forward * Input.GetAxisRaw("Vertical");
+        moveDirection = Vector3.Normalize(movementInput);
 
-
-
-        Vector3 movementInput = transform.right * Input.GetAxisRaw("Horizontal") + transform.forward * Input.GetAxisRaw("Vertical");
-       movementInput = Vector3.Normalize(movementInput);
-        rb.MovePosition(transform.position + movementInput * Time.deltaTime * currentSpeed);
-
-
-        //Google AI
-        if (Input.GetKey(KeyCode.LeftShift) && playerStamina.currentStamina > 0) 
-        {
+        if (isCrouching)
+            currentSpeed = crouchSpeed;
+        else if (playerStamina != null && playerStamina.isSprinting)
             currentSpeed = sprintSpeed;
-            playerStamina.isSprinting = true; // Signal the stamina script to drain
-        } 
-        else 
-        {
-            // ✅ TASK B: "If stamina reaches zero, force speed back to walkSpeed"
-            // (This also runs automatically if the player simply lets go of Shift)
+        else
             currentSpeed = walkSpeed;
-            playerStamina.isSprinting = false; // Signal the stamina script to stop draining
-        }
-
-
-
-        
     }
 
-    
-
-   
+    void FixedUpdate()
+    {
+        // ✅ Move in FixedUpdate so speed is framerate-independent
+        rb.MovePosition(rb.position + moveDirection * currentSpeed * Time.fixedDeltaTime);
+    }
 }

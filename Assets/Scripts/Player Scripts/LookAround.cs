@@ -12,7 +12,7 @@ public class LookAround : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-    void Update ()
+    void Update()
     {
         float mouseX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
@@ -23,47 +23,45 @@ public class LookAround : MonoBehaviour
         yRotation += mouseX;
 
         cameraTransform.localRotation = Quaternion.Euler(xRotation, 0, 0);
-
         transform.localRotation = Quaternion.Euler(0, yRotation, 0);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    } // ✅ fixed: missing closing brace for class
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
