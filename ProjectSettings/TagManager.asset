@@ -8,6 +8,7 @@ TagManager:
   - Walls
   - Door
   - Wardrobes/Closets
+  - Killer
   layers:
   - Default
   - TransparentFX
