@@ -7,12 +7,12 @@ public class PlayerHealth : MonoBehaviour
     public float restartDelay = 2f;
     public float slowMotionScale = 0.4f;
 
-    private Rigidbody rb;               // ✅ fixed: was CharacterController, but player uses Rigidbody
+    private CharacterController controller;  // ✅ back to CharacterController
     private float deathTime = -1f;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        controller = GetComponent<CharacterController>();
     }
 
     void Update()
@@ -31,12 +31,9 @@ public class PlayerHealth : MonoBehaviour
 
         Debug.Log("💀 Player Died");
 
-        // ✅ Stop Rigidbody movement instead of CharacterController
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.isKinematic = true;
-        }
+        // ✅ Disable CharacterController so player can't move after death
+        if (controller != null)
+            controller.enabled = false;
 
         // Disable movement and noise scripts
         PlayerMovement movement = GetComponent<PlayerMovement>();

@@ -14,10 +14,10 @@ public class HidingSpot : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerNoise playerNoise;
     private LookAround playerLook;
+    private CharacterController characterController;
     private bool playerIsHiding = false;
     private Vector3 exitPosition;
 
-    // ✅ Small delay before player can exit, prevents same-frame double input
     private float hideTime = -1f;
     private float exitDelay = 0.3f;
 
@@ -33,6 +33,7 @@ public class HidingSpot : MonoBehaviour
             playerMovement = playerObj.GetComponent<PlayerMovement>();
             playerNoise = playerObj.GetComponent<PlayerNoise>();
             playerLook = playerObj.GetComponent<LookAround>();
+            characterController = playerObj.GetComponent<CharacterController>();
         }
     }
 
@@ -44,15 +45,20 @@ public class HidingSpot : MonoBehaviour
 
         if (!playerIsHiding)
         {
-            // Enter hiding
             if (dist <= interactDistance && Input.GetKeyDown(KeyCode.E))
                 EnterHidingSpot();
         }
         else
         {
-            // ✅ Only allow exit after exitDelay seconds have passed since entering
             if (Input.GetKeyDown(KeyCode.E) && Time.time >= hideTime + exitDelay)
                 ExitHidingSpot();
+
+            // ✅ Keep player locked to hide position
+            if (characterController != null)
+            {
+                characterController.enabled = false;
+                player.position = hidePosition.position;
+            }
         }
     }
 
@@ -67,9 +73,14 @@ public class HidingSpot : MonoBehaviour
         playerIsHiding = true;
         playerHiding = true;
         isSafeHide = isSafe;
-        hideTime = Time.time; // ✅ record when player entered
+        hideTime = Time.time;
 
         exitPosition = player.position;
+
+        // ✅ Disable CharacterController before moving player
+        if (characterController != null)
+            characterController.enabled = false;
+
         player.position = hidePosition.position;
         player.rotation = hidePosition.rotation;
 
@@ -87,6 +98,10 @@ public class HidingSpot : MonoBehaviour
         isSafeHide = false;
 
         player.position = exitPosition;
+
+        // ✅ Re-enable CharacterController on exit
+        if (characterController != null)
+            characterController.enabled = true;
 
         if (playerMovement != null) playerMovement.enabled = true;
         if (playerNoise != null) playerNoise.enabled = true;

@@ -2,12 +2,12 @@ using UnityEngine;
 using UnityEngine.AI;
 
 public class KillerOpensDoor : MonoBehaviour
-
 {
     public float checkDistance = 2f;
     public float stopDistance = 1.5f;
 
     private NavMeshAgent agent;
+    private bool isOpeningDoor = false;  // ✅ prevents stacking multiple Invokes
 
     void Start()
     {
@@ -16,13 +16,13 @@ public class KillerOpensDoor : MonoBehaviour
 
     void Update()
     {
-        CheckForDoor();
+        if (!isOpeningDoor)
+            CheckForDoor();
     }
 
     void CheckForDoor()
     {
         RaycastHit hit;
-
         Vector3 origin = transform.position + Vector3.up * 1.5f;
 
         if (Physics.Raycast(origin, transform.forward, out hit, checkDistance))
@@ -35,9 +35,10 @@ public class KillerOpensDoor : MonoBehaviour
 
                 if (distance <= stopDistance)
                 {
-                    agent.isStopped = true;   // stop at door
-                    door.OpenDoor();          // open it
-                    Invoke(nameof(ResumeMovement), 0.7f); // wait then move
+                    isOpeningDoor = true;
+                    agent.isStopped = true;
+                    door.OpenDoor();
+                    Invoke(nameof(ResumeMovement), 0.7f);
                 }
             }
         }
@@ -46,5 +47,6 @@ public class KillerOpensDoor : MonoBehaviour
     void ResumeMovement()
     {
         agent.isStopped = false;
+        isOpeningDoor = false;
     }
 }

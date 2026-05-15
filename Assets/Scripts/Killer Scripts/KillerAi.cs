@@ -41,10 +41,22 @@ public class KillerAI : MonoBehaviour
     private int patrolIndex;
 
     [Header("Aggression — tune these to balance difficulty")]
-    public float killerMoveSpeed = 4f;        // NavMesh agent speed
-    public float killerAcceleration = 8f;     // how quickly killer reaches top speed
-    public float noiseHearingRange = 15f;     // ✅ replaces detectionRange * 2 for noise
-    public float losePlayerDistance = 18f;    // if player gets this far away, give up chase faster
+    public float killerMoveSpeed = 4f;
+    public float killerAcceleration = 8f;
+    public float noiseHearingRange = 15f;
+    public float losePlayerDistance = 18f;
+
+    [Header("Alert Speed")]
+    public float alertMoveSpeed = 6f;         // ✅ faster speed after hearing noise
+    public float alertDuration = 8f;          // how long killer stays alert after noise
+    private float alertTimer = 0f;
+    private bool isAlerted = false;
+
+    [Header("Voice")]
+    public AudioSource audioSource;           // ✅ assign AudioSource on killer
+    public AudioClip spottedClip;             // sound when killer sees player
+    public AudioClip searchClip;              // sound when investigating noise
+    private bool hasPlayedSpottedSound = false;
 
     // Noise system
     public static Vector3 globalNoisePosition;
@@ -56,6 +68,7 @@ public class KillerAI : MonoBehaviour
         agent.speed = killerMoveSpeed;
         agent.acceleration = killerAcceleration;
         state = State.Patrol;
+        alertTimer = 0f;
         startTime = Time.time;
         aiActive = false;
         agent.ResetPath();
@@ -88,6 +101,18 @@ public class KillerAI : MonoBehaviour
         float distance = Vector3.Distance(transform.position, player.position);
         bool seesPlayer = CanSeePlayer();
 
+        // ✅ Alert timer — killer stays fast after hearing noise
+        if (isAlerted)
+        {
+            alertTimer -= Time.deltaTime;
+            agent.speed = alertMoveSpeed;
+            if (alertTimer <= 0f)
+            {
+                isAlerted = false;
+                agent.speed = killerMoveSpeed;
+            }
+        }
+
         // Vision — track last known position and handle sight loss
         if (seesPlayer)
         {
@@ -96,23 +121,35 @@ public class KillerAI : MonoBehaviour
 
             if (state != State.Attack)
                 state = State.Chase;
-        }
-        else if (state == State.Chase)
-        {
-            float timeLost = Time.time - lastSeenPlayerTime;
 
-            // ✅ Give up chase early if player is far away AND out of sight
-            float distToPlayer = Vector3.Distance(transform.position, player.position);
-            bool farAway = distToPlayer > losePlayerDistance;
-
-            if (timeLost >= losePlayerTime || (farAway && timeLost >= losePlayerTime * 0.4f))
+            // ✅ Play spotted sound once when killer first sees player
+            if (!hasPlayedSpottedSound && audioSource != null && spottedClip != null)
             {
-                // Lost the player — investigate last known position then give up
-                lastHeardPosition = lastKnownPlayerPos;
-                state = State.Investigate;
-                Debug.Log("Lost player — investigating last known position");
+                hasPlayedSpottedSound = true;
+                audioSource.PlayOneShot(spottedClip);
             }
-            // Within timeout: Chase() will move toward lastKnownPlayerPos
+        }
+        else
+        {
+            // ✅ Reset spotted sound so it plays again next chase
+            hasPlayedSpottedSound = false;
+
+            if (state == State.Chase)
+            {
+                float timeLost = Time.time - lastSeenPlayerTime;
+
+                // Give up chase early if player is far away AND out of sight
+                float distToPlayer = Vector3.Distance(transform.position, player.position);
+                bool farAway = distToPlayer > losePlayerDistance;
+
+                if (timeLost >= losePlayerTime || (farAway && timeLost >= losePlayerTime * 0.4f))
+                {
+                    lastHeardPosition = lastKnownPlayerPos;
+                    state = State.Investigate;
+                    Debug.Log("Lost player — investigating last known position");
+                }
+                // Within timeout: Chase() will move toward lastKnownPlayerPos
+            }
         }
 
         // ✅ Attack triggers purely on distance — killer grabs player if close enough
@@ -138,7 +175,23 @@ public class KillerAI : MonoBehaviour
                 if (!seesPlayer && state != State.Chase && state != State.Attack)
                 {
                     state = State.Investigate;
+
+                    // ✅ Play search sound when investigating noise
+                    if (audioSource == null)
+                        Debug.LogError("KillerAI: AudioSource is null!");
+                    else if (searchClip == null)
+                        Debug.LogError("KillerAI: SearchClip is null!");
+                    else
+                    {
+                        Debug.Log("Playing search sound");
+                        audioSource.PlayOneShot(searchClip);
+                    }
                 }
+
+                // ✅ Alert killer — move faster after hearing noise
+                isAlerted = true;
+                alertTimer = alertDuration;
+                agent.speed = alertMoveSpeed;
             }
 
             noiseHeard = false;

@@ -5,6 +5,7 @@ public class UnderBed : MonoBehaviour
     [Header("Settings")]
     public float interactDistance = 2f;
     public Transform hidePosition;
+    public Transform exitPoint;
 
     [Header("Detection while hiding")]
     public float killerDetectDistance = 2.5f;
@@ -12,17 +13,18 @@ public class UnderBed : MonoBehaviour
     private Transform player;
     private PlayerMovement playerMovement;
     private PlayerNoise playerNoise;
-    private CapsuleCollider capsuleCollider;
+    private CharacterController characterController;
     private bool playerIsHiding = false;
     private Vector3 exitPosition;
 
-    // Store original collider values to restore on exit
-    private float originalColliderHeight;
-    private Vector3 originalColliderCenter;
-    private Vector3 originalScale;
-
     private float hideTime = -1f;
     private float exitDelay = 0.3f;
+
+    private Transform playerCamera;
+    private Vector3 originalCameraLocalPos;
+
+    private float originalCCHeight;
+    private Vector3 originalCCCenter;
 
     void Start()
     {
@@ -32,15 +34,20 @@ public class UnderBed : MonoBehaviour
             player = playerObj.transform;
             playerMovement = playerObj.GetComponent<PlayerMovement>();
             playerNoise = playerObj.GetComponent<PlayerNoise>();
-            capsuleCollider = playerObj.GetComponent<CapsuleCollider>();
+            characterController = playerObj.GetComponent<CharacterController>();
 
-            if (capsuleCollider != null)
+            Camera cam = playerObj.GetComponentInChildren<Camera>();
+            if (cam != null)
             {
-                originalColliderHeight = capsuleCollider.height;
-                originalColliderCenter = capsuleCollider.center;
+                playerCamera = cam.transform;
+                originalCameraLocalPos = cam.transform.localPosition;
             }
 
-            originalScale = playerObj.transform.localScale;
+            if (characterController != null)
+            {
+                originalCCHeight = characterController.height;
+                originalCCCenter = characterController.center;
+            }
         }
     }
 
@@ -58,11 +65,15 @@ public class UnderBed : MonoBehaviour
         else
         {
             if (Input.GetKeyDown(KeyCode.E) && Time.time >= hideTime + exitDelay)
+            {
                 ExitBed();
+                return; // ✅ return immediately so nothing below runs after exit
+            }
 
             HidingSpot.playerHiding = true;
             HidingSpot.isSafeHide = false;
 
+            // Killer found you if too close
             GameObject killerObj = GameObject.FindGameObjectWithTag("Killer");
             if (killerObj != null)
             {
@@ -93,17 +104,22 @@ public class UnderBed : MonoBehaviour
         hideTime = Time.time;
 
         exitPosition = player.position;
+
+        // Disable CC, move player, shrink CC
+        if (characterController != null)
+            characterController.enabled = false;
+
         player.position = hidePosition.position;
 
-        // ✅ Flatten the capsule collider so player fits under the bed
-        if (capsuleCollider != null)
+        if (characterController != null)
         {
-            capsuleCollider.height = 0.4f;
-            capsuleCollider.center = new Vector3(0, 0.2f, 0);
+            characterController.height = 0.3f;
+            characterController.center = new Vector3(0, 0.15f, 0);
         }
 
-        // ✅ Flatten the player scale to look like they're lying down
-        player.localScale = new Vector3(originalScale.x, 0.25f, originalScale.z);
+        if (playerCamera != null)
+            playerCamera.localPosition = new Vector3(
+                originalCameraLocalPos.x, -0.3f, originalCameraLocalPos.z);
 
         if (playerMovement != null) playerMovement.enabled = false;
         if (playerNoise != null) playerNoise.enabled = false;
@@ -116,16 +132,24 @@ public class UnderBed : MonoBehaviour
         playerIsHiding = false;
         HidingSpot.playerHiding = false;
 
-        player.position = exitPosition;
+        // Restore camera
+        if (playerCamera != null)
+            playerCamera.localPosition = originalCameraLocalPos;
 
-        // ✅ Restore original collider and scale
-        if (capsuleCollider != null)
+        // Restore CC size
+        if (characterController != null)
         {
-            capsuleCollider.height = originalColliderHeight;
-            capsuleCollider.center = originalColliderCenter;
+            characterController.height = originalCCHeight;
+            characterController.center = originalCCCenter;
         }
 
-        player.localScale = originalScale;
+        // ✅ Move to exit point while CC is still disabled
+        Vector3 targetExit = (exitPoint != null) ? exitPoint.position : exitPosition;
+        player.position = targetExit;
+
+        // ✅ Re-enable CC AFTER player is at exit position
+        if (characterController != null)
+            characterController.enabled = true;
 
         if (playerMovement != null) playerMovement.enabled = true;
         if (playerNoise != null) playerNoise.enabled = true;

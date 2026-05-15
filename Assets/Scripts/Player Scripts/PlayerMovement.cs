@@ -2,32 +2,42 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public Rigidbody rb;
-    public float walkSpeed = 5f;
-    public float sprintSpeed = 8f;
-    public float crouchSpeed = 2.5f;
+    [Header("Speed")]
+    public float walkSpeed = 4f;
+    public float sprintSpeed = 7f;
+    public float crouchSpeed = 1.8f;
 
+    [Header("Physics")]
+    public float gravity = -20f;
+    public float stepOffset = 0.4f;      // ✅ max step height CharacterController can climb
+    public float slopeLimit = 50f;       // ✅ max slope angle it can walk up
+
+    private CharacterController controller;
     private PlayerStamina playerStamina;
     private CrouchScript crouchScript;
 
+    private float verticalVelocity;
     private Vector3 moveDirection;
     private float currentSpeed;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        controller = GetComponent<CharacterController>();
         playerStamina = GetComponent<PlayerStamina>();
         crouchScript = GetComponent<CrouchScript>();
+
+        // ✅ Apply stair/slope settings to CharacterController
+        controller.stepOffset = stepOffset;
+        controller.slopeLimit = slopeLimit;
     }
 
     void Update()
     {
-        // ✅ Read input in Update (responsive), apply movement in FixedUpdate (consistent physics)
         bool isCrouching = crouchScript != null && crouchScript.isCrouching;
 
-        Vector3 movementInput = transform.right * Input.GetAxisRaw("Horizontal")
-                              + transform.forward * Input.GetAxisRaw("Vertical");
-        moveDirection = Vector3.Normalize(movementInput);
+        Vector3 input = transform.right * Input.GetAxisRaw("Horizontal")
+                      + transform.forward * Input.GetAxisRaw("Vertical");
+        moveDirection = Vector3.Normalize(input);
 
         if (isCrouching)
             currentSpeed = crouchSpeed;
@@ -35,11 +45,18 @@ public class PlayerMovement : MonoBehaviour
             currentSpeed = sprintSpeed;
         else
             currentSpeed = walkSpeed;
-    }
 
-    void FixedUpdate()
-    {
-        // ✅ Move in FixedUpdate so speed is framerate-independent
-        rb.MovePosition(rb.position + moveDirection * currentSpeed * Time.fixedDeltaTime);
+        // Gravity
+        if (controller.isGrounded)
+            verticalVelocity = -2f;
+        else
+            verticalVelocity += gravity * Time.deltaTime;
+
+        Vector3 move = moveDirection * currentSpeed;
+        move.y = verticalVelocity;
+
+        // ✅ Only move if CharacterController is active
+        if (controller != null && controller.enabled)
+            controller.Move(move * Time.deltaTime);
     }
 }
